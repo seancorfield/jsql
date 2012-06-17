@@ -55,6 +55,8 @@
         (order-by :a))
 (expect "ORDER BY a ASC"
         (order-by [:a]))
+(expect "ORDER BY a DESC"
+        (order-by {:a :desc}))
 (expect "ORDER BY a ASC,b ASC"
         (order-by [:a :b]))
 (expect "ORDER BY a DESC,b ASC"

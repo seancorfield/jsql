@@ -61,20 +61,19 @@
         " AND "
         (map (fn [[k v]] (str (jdbc/as-identifier k entities) " = " (jdbc/as-identifier v entities))) on-map))))
 
+(defn- order-direction [col entities]
+  (if (map? col)
+    (str (jdbc/as-identifier (first (keys col)) entities)
+         " "
+         (let [dir (first (vals col))]
+           (get {:asc "ASC" :desc "DESC"} dir dir)))
+    (str (jdbc/as-identifier col entities) " ASC")))
+
 (defn order-by [cols & {:keys [entities] :or {entities as-is}}]
-  (if (or (string? cols) (keyword? cols))
-    (str "ORDER BY " (jdbc/as-identifier cols entities) " ASC")
-    (str "ORDER BY "
-         (str-join
-          ","
-          (map (fn [col]
-                 (if (map? col)
-                   (str (jdbc/as-identifier (first (keys col)) entities)
-                        " "
-                        (let [dir (first (vals col))]
-                          (get {:asc "ASC" :desc "DESC"} dir dir)))
-                   (str (jdbc/as-identifier col entities) " ASC")))
-               cols)))))
+  (str "ORDER BY "
+       (if (or (string? cols) (keyword? cols) (map? cols))
+         (order-direction cols entities)
+         (str-join "," (map #(order-direction % entities) cols)))))
 
 (defn select [col-seq table & clauses]
   (let [joins (take-while string? clauses)
