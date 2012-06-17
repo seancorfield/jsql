@@ -14,7 +14,8 @@ Generate SQL and parameters that can be use in **with-query-results** style expr
 (select [{:p.id :userid} :p.name :a.city] {:person :p}
   (join {:address :a} {:p.id :a.personid}
   (where {:p.email "user@domain.com"}))
-;;=> ["SELECT userid, p.name FROM person p JOIN address a ON p.id = a.personid WHERE p.email = ?" "user@domain.com"]
+;;=> ["SELECT userid, p.name FROM person p JOIN address a ON p.id = a.personid
+;;     WHERE p.email = ?" "user@domain.com"]
 (update :person {:status "active"})
 ;;=> ["UPDATE person SET status = ?" "active"]
 (update :person {:status "suspended"}
