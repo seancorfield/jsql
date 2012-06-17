@@ -1,6 +1,6 @@
 # jsql
 
-Experimental DSL for SQL generation for next version of clojure.ja
+Experimental DSL for SQL generation for next version of clojure.java.jdbc.
 
 ## Usage
 
