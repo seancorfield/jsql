@@ -1,44 +1,62 @@
 (ns jsql.core
   (:require [clojure.java.jdbc :as jdbc]
-            [clojure.string :refer [join] :rename {join str-join}]
+            [clojure.string
+             :refer [join lower-case]
+             :rename {join str-join
+                      lower-case str-lower}]
             [clojure.walk :refer [postwalk]]))
 
-(defn- col-str [col entity]
+(defn- col-str [col entities]
   (if (map? col)
     (let [[k v] (first col)]
-      (str (jdbc/as-identifier k entity) " AS " (jdbc/as-identifier v entity)))
-    (jdbc/as-identifier col entity)))
+      (str (jdbc/as-identifier k entities) " AS " (jdbc/as-identifier v entities)))
+    (jdbc/as-identifier col entities)))
 
-(defn- table-str [table entity]
+(defn- table-str [table entities]
   (if (map? table)
     (let [[k v] (first table)]
-      (str (jdbc/as-identifier k entity) " " (jdbc/as-identifier v entity)))
-    (jdbc/as-identifier table entity)))
+      (str (jdbc/as-identifier k entities) " " (jdbc/as-identifier v entities)))
+    (jdbc/as-identifier table entities)))
 
-(def ^:private sql-syms
-  #{"delete" "insert" "join" "select" "update" "where"})
+(def ^:private entity-symbols
+  #{"delete" "delete!" "insert" "insert!" "join" "select" "update" "update!" "where"})
 
-(defmacro naming [entity sql]
+(defmacro entities [entities sql]
   (postwalk (fn [form]
               (if (and (seq? form)
                        (symbol? (first form))
-                       (sql-syms (name (first form))))
-                (concat form [:entity entity])
+                       (entity-symbols (name (first form))))
+                (concat form [:entities entities])
                 form)) sql))
 
-(defn delete [table [where & params] & {:keys [entity] :or {entity identity}}]
-  (into [(str "DELETE FROM " (table-str table entity)
+(def ^:private identifier-symbols
+  #{"query"})
+
+(defmacro identifiers [identifiers sql]
+  (postwalk (fn [form]
+              (if (and (seq? form)
+                       (symbol? (first form))
+                       (identifier-symbols (name (first form))))
+                (concat form [:identifiers identifiers])
+                form)) sql))
+
+(def as-is identity)
+(def lower-case str-lower)
+(defn quoted [q] (partial jdbc/as-quoted-str q))
+
+(defn delete [table [where & params] & {:keys [entities] :or {entities as-is}}]
+  (into [(str "DELETE FROM " (table-str table entities)
               (when where " WHERE ") where)]
         params))
 
 (defn insert [tables & clauses]
   [""])
 
-(defn join [table on-map & {:keys [entity] :or {entity identity}}]
-  (str " JOIN " (table-str table entity) " ON "
+(defn join [table on-map & {:keys [entities] :or {entities as-is}}]
+  (str "JOIN " (table-str table entities) " ON "
        (str-join
         " AND "
-        (map (fn [[k v]] (str (jdbc/as-identifier k entity) " = " (jdbc/as-identifier v entity))) on-map))))
+        (map (fn [[k v]] (str (jdbc/as-identifier k entities) " = " (jdbc/as-identifier v entities))) on-map))))
 
 (defn select [col-seq table & clauses]
   (let [joins (take-while string? clauses)
@@ -46,46 +64,45 @@
         [where & params] (when-not (keyword? (first where-etc))
                            (first where-etc))
         options (if where (rest where-etc) where-etc)
-        {:keys [entity] :or {entity identity}} (apply hash-map  options)]
-    (into [(str
-            "SELECT "
-            (cond
-             (= * col-seq) "*"
-             (or (string? col-seq)
-                 (keyword? col-seq)
-                 (map? col-seq)) (col-str col-seq entity)
-             :else (str-join "," (map #(col-str % entity) col-seq)))
-            " FROM " (table-str table entity)
-            (str-join " " joins)
-            (when where " WHERE ")
-            where)]
+        {:keys [entities] :or {entities as-is}} (apply hash-map  options)]
+    (cons (str "SELECT "
+               (cond
+                (= * col-seq) "*"
+                (or (string? col-seq)
+                    (keyword? col-seq)
+                    (map? col-seq)) (col-str col-seq entities)
+                    :else (str-join "," (map #(col-str % entities) col-seq)))
+               " FROM " (table-str table entities)
+               (when (seq joins) (str-join " " (cons "" joins)))
+               (when where " WHERE ")
+               where)
           params)))
 
 (defn update [table set-map & where-etc]
   (let [[where-clause & options] (when-not (keyword? (first where-etc)) where-etc)
         [where & params] where-clause
-        {:keys [entity] :or {entity identity}} (if (keyword? (first where-etc)) where-etc options)
+        {:keys [entities] :or {entities as-is}} (if (keyword? (first where-etc)) where-etc options)
         ks (keys set-map)
         vs (vals set-map)]
-    (into [(str "UPDATE " (table-str table entity)
-                " SET " (str-join
-                         ","
-                         (map (fn [k v] (str (jdbc/as-identifier k entity)
-                                            " = "
-                                            (if (nil? v) "NULL" "?")))
-                              ks vs))
-                (when where " WHERE ")
-                where
-                )]
+    (cons (str "UPDATE " (table-str table entities)
+               " SET " (str-join
+                        ","
+                        (map (fn [k v]
+                               (str (jdbc/as-identifier k entities)
+                                    " = "
+                                    (if (nil? v) "NULL" "?")))
+                             ks vs))
+               (when where " WHERE ")
+               where)
           (concat (remove nil? vs) params))))
 
-(defn where [param-map & {:keys [entity] :or {entity identity}}]
+(defn where [param-map & {:keys [entities] :or {entities as-is}}]
   (let [ks (keys param-map)
         vs (vals param-map)]
-    (cons
-     (str-join
-      " AND "
-      (map (fn [k v]
-             (str (jdbc/as-identifier k entity) (if (nil? v) " IS NULL" " = ?")))
-           ks vs))
-     (remove nil? vs))))
+    (cons (str-join
+           " AND "
+           (map (fn [k v]
+                  (str (jdbc/as-identifier k entities)
+                       (if (nil? v) " IS NULL" " = ?")))
+                ks vs))
+          (remove nil? vs))))
