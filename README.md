@@ -16,6 +16,9 @@ Generate SQL and parameters that can be use in **with-query-results** style expr
   (where {:p.email "user@domain.com"}))
 ;;=> ("SELECT userid, p.name FROM person p JOIN address a ON p.id = a.personid
 ;;     WHERE p.email = ?" "user@domain.com")
+(select [:id :name] :person
+  (order-by [:name]))
+;;=> ("SELECT id,name FROM person ORDER BY name ASC")
 (update :person {:status "active"})
 ;;=> ("UPDATE person SET status = ?" "active")
 (update :person {:status "suspended"}
@@ -43,6 +46,8 @@ A *where-clause* is a sequence whose first element is a string containing SQL co
 A *join-map* is a map whose keys and values represent columns in the two tables being joined.
 
 **where** expects a *value-map* which is used to generate a string that contains the conditional part of a WHERE clause and the values to be substituted for parameters (**?**) within that string. It returns a sequence whose first element is the string and whose remaining elements are the parameter values.
+
+**order-by** expects a sequence of *col-sorts*. A *col-sort* is either string or keyword representing a column to sort on (ascending), or a map with one key / value pair that specifies a column name and a sort direction (**:asc**, **:desc**).
 
 **update** expects a *table-spec*, an *update-map* and an optional *where-clause*. It returns a sequence whose first element is a string containing a SQL UPDATE statement and whose remaining elements are the values to be substituted for parameters (**?**) in that string.
 

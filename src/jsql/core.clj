@@ -19,7 +19,10 @@
     (jdbc/as-identifier table entities)))
 
 (def ^:private entity-symbols
-  #{"delete" "delete!" "insert" "insert!" "join" "select" "update" "update!" "where"})
+  #{"delete" "delete!"
+    "insert" "insert!"
+    "select" "join" "where" "order-by"
+    "update" "update!"})
 
 (defmacro entities [entities sql]
   (postwalk (fn [form]
@@ -58,12 +61,30 @@
         " AND "
         (map (fn [[k v]] (str (jdbc/as-identifier k entities) " = " (jdbc/as-identifier v entities))) on-map))))
 
+(defn order-by [cols & {:keys [entities] :or {entities as-is}}]
+  (if (or (string? cols) (keyword? cols))
+    (str "ORDER BY " (jdbc/as-identifier cols entities) " ASC")
+    (str "ORDER BY "
+         (str-join
+          ","
+          (map (fn [col]
+                 (if (map? col)
+                   (str (jdbc/as-identifier (first (keys col)) entities)
+                        " "
+                        (let [dir (first (vals col))]
+                          (get {:asc "ASC" :desc "DESC"} dir dir)))
+                   (str (jdbc/as-identifier col entities) " ASC")))
+               cols)))))
+
 (defn select [col-seq table & clauses]
   (let [joins (take-while string? clauses)
         where-etc (drop (count joins) clauses)
-        [where & params] (when-not (keyword? (first where-etc))
-                           (first where-etc))
-        options (if where (rest where-etc) where-etc)
+        [where-clause & more] where-etc
+        [where & params] (when-not (keyword? where-clause) where-clause)
+        order-etc (if (keyword? where-clause) where-etc more)
+        [order-clause & more] order-etc
+        order-by (when (string? order-clause) order-clause)
+        options (if order-by more order-etc)
         {:keys [entities] :or {entities as-is}} (apply hash-map  options)]
     (cons (str "SELECT "
                (cond
@@ -75,7 +96,9 @@
                " FROM " (table-str table entities)
                (when (seq joins) (str-join " " (cons "" joins)))
                (when where " WHERE ")
-               where)
+               where
+               (when order-by " ")
+               order-by)
           params)))
 
 (defn update [table set-map & where-etc]

@@ -51,6 +51,38 @@
 (expect ["SELECT * FROM a WHERE c IS NULL AND b = ?" 2]
         (select * :a (where {:b 2 :c nil})))
 
+(expect "ORDER BY a ASC"
+        (order-by :a))
+(expect "ORDER BY a ASC"
+        (order-by [:a]))
+(expect "ORDER BY a ASC,b ASC"
+        (order-by [:a :b]))
+(expect "ORDER BY a DESC,b ASC"
+        (order-by [{:a :desc} :b]))
+(expect "ORDER BY a ASC,b DESC"
+        (order-by [{:a :asc} {:b :desc}]))
+(expect "ORDER BY `a` ASC,`b` DESC"
+        (entities (quoted \`)
+                  (order-by [{:a :asc} {:b :desc}])))
+(expect "ORDER BY `a` ASC,`b` DESC"
+        (order-by [{:a :asc} {:b :desc}] :entities (quoted \`)))
+
+(expect ["SELECT id FROM person ORDER BY name ASC"]
+        (select :id :person (order-by :name)))
+(expect ["SELECT a FROM b JOIN c ON b.id = c.id ORDER BY d ASC"]
+        (select :a :b
+                (join :c {:b.id :c.id})
+                (order-by :d)))
+(expect ["SELECT a FROM b WHERE c = ? ORDER BY d ASC" 3]
+        (select :a :b
+                (where {:c 3})
+                (order-by :d)))
+(expect ["SELECT a FROM b JOIN c ON b.id = c.id WHERE d = ? ORDER BY e ASC" 4]
+        (select :a :b
+                (join :c {:b.id :c.id})
+                (where {:d 4})
+                (order-by :e)))
+
 (expect ["SELECT a.id,b.name FROM aa a JOIN bb b ON a.id = b.id WHERE b.test = ?" 42]
         (select [:a.id :b.name] {:aa :a}
                 (join {:bb :b} {:a.id :b.id})
