@@ -23,7 +23,7 @@ Generate SQL and parameters that can be use in **with-query-results** style expr
 ```
 **select** expects a *column-spec*, a *table-spec*, optional *join-clauses* (as strings), an optional *where-clause* (sequence of SQL conditions as a string followed by parameters). It returns a vector whose first element is a string containing a SQL SELECT statement and whose remaining elements are the values to be substituted for parameters (**?**) in that string.
 
-A *column-spec* may be **\***, a single *column* or a sequence of *columns*. A *column* may be a string or keyword, or a map (of a single key to a single value, that specifies a column alias).
+A *column-spec* may be \*, a single *column* or a sequence of *columns*. A *column* may be a string or keyword, or a map (of a single key to a single value, that specifies a column alias).
 
 A *table-spec* may be a string or a keyword, or a map (of a single key to a single value, that specifies a table alias).
 
@@ -45,7 +45,7 @@ A *join-map* is a map whose keys and values represent columns in the two tables 
 
 An *update-map* is a map whose keys represent columns to be set to the corresponding values.
 
-All functions that generate SQL may have an optional **:entity** keyword argument (after the specified arguments) which specifies an identifier naming convention, e.g., **(partial jdbc/as-quoted-str \`)** which would cause SQL entities to be quoted with **\`** (**:id** would become **`id`**).
+All functions that generate SQL may have an optional **:entity** keyword argument (after the specified arguments) which specifies an identifier naming convention, e.g., **(partial jdbc/as-quoted-str \\`)** which would cause SQL entities to be quoted with **\`** (**:id** would become **\`id\`**).
 
 The **naming** macro can be used to apply an identifier naming convention to a DSL expression. It expects a function representing the naming convention and a DSL expression. It post-walks the DSL expression and inserts the **:entity** keyword argument and naming convention at the end of each expression. *This is likely to be renamed when I can think of a better name!*
 
