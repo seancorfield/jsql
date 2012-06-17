@@ -63,6 +63,9 @@ The remaining parts of the DSL are the high level parts that will execute SQL an
 ;;=> runs a SELECT SQL statement
 ;;   applies row-fn to each row returned (default: identity)
 ;;   applies rs-fn to the whole result set (default: doall)
+(query db
+  (select * :user (where {:email "user@domain.com"})))
+;;=> returns all user records that match on email
 
 (execute! db sql-params)
 ;;=> runs a non-SELECT SQL statement and returns the update counts, if appropiate
