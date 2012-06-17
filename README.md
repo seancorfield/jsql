@@ -17,7 +17,7 @@ Generate SQL and parameters that can be use in **with-query-results** style expr
 ;;=> ("SELECT userid, p.name FROM person p JOIN address a ON p.id = a.personid
 ;;     WHERE p.email = ?" "user@domain.com")
 (select [:id :name] :person
-  (order-by [:name]))
+  (order-by :name))
 ;;=> ("SELECT id,name FROM person ORDER BY name ASC")
 (update :person {:status "active"})
 ;;=> ("UPDATE person SET status = ?" "active")
