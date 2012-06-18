@@ -9,6 +9,7 @@
                      [lein-expectations "0.0.3"]
                      [expectations "1.4.3"]
                      [clojure-source "1.3.0"]
-                     [swank-clojure "1.4.2"]]
+                     [swank-clojure "1.4.2"]
+                     [mysql/mysql-connector-java "5.1.6"]]
   :dependencies [[org.clojure/clojure "1.4.0"]
                  [org.clojure/java.jdbc "0.2.3-SNAPSHOT"]])

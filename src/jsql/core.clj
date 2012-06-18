@@ -128,3 +128,41 @@
                        (if (nil? v) " IS NULL" " = ?")))
                 ks vs))
           (remove nil? vs))))
+
+(defn query [db sql-params & {:keys [result-set row identifiers]
+                              :or {result-set doall row identity identifiers lower-case}}]
+  (jdbc/with-connection db
+    (jdbc/with-query-results rs
+      (vec sql-params)
+      (result-set (map row rs)))))
+
+(defn execute! [db sql-params]
+  (jdbc/with-connection db
+    (jdbc/do-prepared (first sql-params) (rest sql-params))))
+
+(defn delete! [db table where-map & {:keys [entities]
+                                     :or {entities as-is}}]
+  (execute! db (delete table where-map :entities entities)))
+
+(defn insert! [db table & maps-or-cols-and-values-etc]
+  (let [records (take-while map? maps-or-cols-and-values-etc)
+        cols-and-values-etc (drop (count records) maps-or-cols-and-values-etc)
+        cols-and-values (take-while (comp not keyword?) cols-and-values-etc)
+        [cols & values] cols-and-values
+        options (drop (count cols-and-values) cols-and-values-etc)
+        {:keys [entities identifiers]
+         :or {entities as-is identifiers lower-case}} options]
+    (if cols
+      (do
+        (when (seq records) (throw (IllegalArgumentException. "insert! may take records or columns and values, not both")))
+        (when (nil? values) (throw (IllegalArgumentException. "insert! called with columns but no values"))))
+      (when (empty? records) (throw (IllegalArgumentException. "insert! called without data to insert"))))
+    (jdbc/with-connection db
+      (condp = (count records)
+        0 (apply jdbc/insert-values table cols values)
+        1 (jdbc/insert-record table (first records))
+        (apply jdbc/insert-records table records)))))
+
+(defn update! [db table set-map where-map & {:keys [entities]
+                                             :or {entities as-is}}]
+  (execute! db (update table set-map where-map :entities entities)))
