@@ -51,7 +51,7 @@
    (create-test-table :fruit mysql-db))
  (let [result (insert! mysql-db :fruit
                        {:name "Apple"})]
-   (expect {:generated_key 1} result)))
+   (expect [1] result)))
 
 (scenario ;; insert! and query returns inserted row
  (jdbc/with-connection mysql-db
@@ -61,7 +61,7 @@
                         {:name "Apple"})
        rows (query mysql-db
                    (select * :fruit))]
-   (expect {:generated_key 1} new-key)
+   (expect [1] new-key)
    (expect [{:id 1 :name "Apple" :appearance nil :grade nil :cost nil}] rows)))
 
 (scenario ;; insert! and query returns inserted row
@@ -72,7 +72,7 @@
                         [:name] ["Apple"])
        rows (query mysql-db
                    (select * :fruit))]
-   (expect {:generated_key 1} new-key)
+   (expect [1] new-key)
    (expect [{:id 1 :name "Apple" :appearance nil :grade nil :cost nil}] rows)))
 
 (scenario ;; insert! two records and query returns inserted rows
@@ -85,8 +85,7 @@
        rows (query mysql-db
                    (select * :fruit
                            (order-by :id)))]
-   (expect [{:generated_key 1}
-            {:generated_key 2}] new-key)
+   (expect [1 2] new-key)
    (expect [{:id 1 :name "Apple" :appearance nil :grade nil :cost nil}
             {:id 2 :name "Pear" :appearance nil :grade nil :cost nil}] rows)))
 
@@ -99,7 +98,7 @@
        rows (query mysql-db
                    (select * :fruit
                            (order-by :id)))]
-   (expect [1 1] update-counts)
+   (expect [2] update-counts)
    (expect [{:id 1 :name "Apple" :appearance nil :grade nil :cost nil}
             {:id 2 :name "Pear" :appearance nil :grade nil :cost nil}] rows)))
 
@@ -114,7 +113,7 @@
                               (where {:id 1}))
        rows (query mysql-db
                    (select * :fruit))]
-   (expect {:generated_key 1} new-key)
+   (expect [1] new-key)
    (expect [1] update-result)
    (expect [{:id 1 :name "Apple" :appearance "Green" :grade 1.2 :cost 12}] rows)))
 
@@ -128,7 +127,7 @@
                               (where {:id 1}))
        rows (query mysql-db
                    (select * :fruit))]
-   (expect {:generated_key 1} new-key)
+   (expect [1] new-key)
    (expect [1] delete-result)
    (expect [] rows)))
 

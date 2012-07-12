@@ -112,3 +112,24 @@
 (expect ["DELETE FROM `a` WHERE `b` = ?" 2]
         (entities (quoted \`)
                   (delete :a (where {:b 2}))))
+
+(expect ["INSERT INTO a ( b ) VALUES ( ? )" 2]
+        (insert :a [:b] [2]))
+(expect [["INSERT INTO a ( b ) VALUES ( ? )" 2]]
+        (insert :a {:b 2}))
+(expect ["INSERT INTO a ( b ) VALUES ( ? ), ( ? )" 2 3]
+        (insert :a [:b] [2] [3]))
+(expect ["INSERT INTO a ( b, c, d ) VALUES ( ?, ?, ? ), ( ?, ?, ? )" 2 3 4 3 4 5]
+        (insert :a [:b :c :d] [2 3 4] [3 4 5]))
+(expect [["INSERT INTO a ( b ) VALUES ( ? )" 2]
+         ["INSERT INTO a ( c ) VALUES ( ? )" 3]]
+        (insert :a {:b 2} {:c 3}))
+(expect ["INSERT INTO `a` ( `b` ) VALUES ( ? )" 2]
+        (entities (quoted \`)
+                  (insert :a [:b] [2])))
+
+(expect IllegalArgumentException (insert))
+(expect IllegalArgumentException (insert :a))
+(expect IllegalArgumentException (insert :a [:b]))
+(expect IllegalArgumentException (insert :a {:b 1} [:c] [2]))
+(expect IllegalArgumentException (insert :a [:b] [2 3]))

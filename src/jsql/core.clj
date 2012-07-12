@@ -52,8 +52,48 @@
               (when where " WHERE ") where)]
         params))
 
-(defn insert [tables & clauses]
-  [""])
+(defn- insert-multi-row [table columns values entities]
+  (let [nc (count columns)
+        vcs (map count values)]
+    (if (not (apply = nc vcs))
+      (throw (IllegalArgumentException. "insert called with inconsistent number of columns / values"))
+      (into [(str "INSERT INTO " (table-str table entities) " ( "
+                  (str-join ", " (map (fn [col] (col-str col entities)) columns))
+                  " ) VALUES "
+                  (str-join ", "
+                            (repeat (count values)
+                                    (str "( "
+                                         (str-join ", " (repeat nc "?"))
+                                         " )"))))]
+            (apply concat values)))))
+
+(defn- insert-single-row [table row entities]
+  (let [ks (keys row)]
+    (into [(str "INSERT INTO " (table-str table entities) " ( "
+                (str-join ", " (map (fn [col] (col-str col entities)) ks))
+                " ) VALUES ( "
+                (str-join ", " (repeat (count ks) "?"))
+                " )")]
+          (vals row))))
+
+(defn insert [table & clauses]
+  (let [rows (take-while map? clauses)
+        n-rows (count rows)
+        cols-and-vals-etc (drop n-rows clauses)
+        cols-and-vals (take-while (comp not keyword?) cols-and-vals-etc)
+        n-cols-and-vals (count cols-and-vals)
+        no-cols-and-vals (zero? n-cols-and-vals)
+        options (drop (+ (count rows) (count cols-and-vals)) clauses)
+        {:keys [entities] :or {entities as-is}} (apply hash-map options)]
+    (if (zero? n-rows)
+      (if no-cols-and-vals
+        (throw (IllegalArgumentException. "insert called without data to insert"))
+        (if (< n-cols-and-vals 2)
+          (throw (IllegalArgumentException. "insert called with columns but no values"))
+          (insert-multi-row table (first cols-and-vals) (rest cols-and-vals) entities)))
+      (if no-cols-and-vals
+        (map (fn [row] (insert-single-row table row entities)) rows)
+        (throw (IllegalArgumentException. "insert may take records or columns and values, not both"))))))
 
 (defn join [table on-map & {:keys [entities] :or {entities as-is}}]
   (str "JOIN " (table-str table entities) " ON "
@@ -145,23 +185,13 @@
   (execute! db (delete table where-map :entities entities)))
 
 (defn insert! [db table & maps-or-cols-and-values-etc]
-  (let [records (take-while map? maps-or-cols-and-values-etc)
-        cols-and-values-etc (drop (count records) maps-or-cols-and-values-etc)
-        cols-and-values (take-while (comp not keyword?) cols-and-values-etc)
-        [cols & values] cols-and-values
-        options (drop (count cols-and-values) cols-and-values-etc)
-        {:keys [entities identifiers]
-         :or {entities as-is identifiers lower-case}} options]
-    (if cols
-      (do
-        (when (seq records) (throw (IllegalArgumentException. "insert! may take records or columns and values, not both")))
-        (when (nil? values) (throw (IllegalArgumentException. "insert! called with columns but no values"))))
-      (when (empty? records) (throw (IllegalArgumentException. "insert! called without data to insert"))))
+  (let [stmts (apply insert table maps-or-cols-and-values-etc)]
     (jdbc/with-connection db
-      (condp = (count records)
-        0 (apply jdbc/insert-values table cols values)
-        1 (jdbc/insert-record table (first records))
-        (apply jdbc/insert-records table records)))))
+      (if (string? (first stmts))
+        (jdbc/do-prepared (first stmts) (rest stmts))
+        (doall (map (fn [row] (first (vals (jdbc/do-prepared-return-keys
+                                           (first row) (rest row)))))
+                    stmts))))))
 
 (defn update! [db table set-map where-map & {:keys [entities]
                                              :or {entities as-is}}]
