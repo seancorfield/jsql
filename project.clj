@@ -3,8 +3,6 @@
   :url "https://github.com/seancorfield/jsql"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
-  ;; currently relying on experimental as-identifier functionality in clojure.java.jdbc
-  :repositories [["sonatype-snapshots" "https://oss.sonatype.org/content/repositories/snapshots/"]]
   :plugins [[lein-autoexpect "0.1.1"]
             [lein-expectations "0.0.5"]
             [lein-swank "1.4.4"]]
