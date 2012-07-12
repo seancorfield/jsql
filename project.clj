@@ -5,11 +5,11 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   ;; currently relying on experimental as-identifier functionality in clojure.java.jdbc
   :repositories [["sonatype-snapshots" "https://oss.sonatype.org/content/repositories/snapshots/"]]
-  :dev-dependencies [[lein-autoexpect "0.1.1"]
-                     [lein-expectations "0.0.3"]
-                     [expectations "1.4.3"]
-                     [clojure-source "1.3.0"]
-                     [swank-clojure "1.4.2"]
-                     [mysql/mysql-connector-java "5.1.6"]]
+  :plugins [[lein-autoexpect "0.1.1"]
+            [lein-expectations "0.0.5"]
+            [lein-swank "1.4.4"]]
+  :profiles {:dev {:dependencies [[expectations "1.4.3"]
+                                  [clojure-source "1.3.0"]
+                                  [mysql/mysql-connector-java "5.1.6"]]}}
   :dependencies [[org.clojure/clojure "1.4.0"]
-                 [org.clojure/java.jdbc "0.2.3-SNAPSHOT"]])
+                 [org.clojure/java.jdbc "0.2.3"]])
