@@ -10,4 +10,4 @@
                                   [clojure-source "1.3.0"]
                                   [mysql/mysql-connector-java "5.1.6"]]}}
   :dependencies [[org.clojure/clojure "1.4.0"]
-                 [org.clojure/java.jdbc "0.2.3"]])
+                 [org.clojure/java.jdbc "0.2.4-SNAPSHOT"]])
