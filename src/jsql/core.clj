@@ -4,7 +4,10 @@
              :refer [join lower-case]
              :rename {join str-join
                       lower-case str-lower}]
-            [clojure.walk :refer [postwalk]]))
+            [clojure.walk :refer [postwalk]])
+  (:import [java.sql PreparedStatement]))
+
+;; implementation utilities
 
 (defn- col-str [col entities]
   (if (map? col)
@@ -24,33 +27,16 @@
     "select" "join" "where" "order-by"
     "update" "update!"})
 
-(defmacro entities [entities sql]
-  (postwalk (fn [form]
-              (if (and (seq? form)
-                       (symbol? (first form))
-                       (entity-symbols (name (first form))))
-                (concat form [:entities entities])
-                form)) sql))
-
 (def ^:private identifier-symbols
   #{"query"})
 
-(defmacro identifiers [identifiers sql]
-  (postwalk (fn [form]
-              (if (and (seq? form)
-                       (symbol? (first form))
-                       (identifier-symbols (name (first form))))
-                (concat form [:identifiers identifiers])
-                form)) sql))
-
-(def as-is identity)
-(def lower-case str-lower)
-(defn quoted [q] (partial jdbc/as-quoted-str q))
-
-(defn delete [table [where & params] & {:keys [entities] :or {entities as-is}}]
-  (into [(str "DELETE FROM " (table-str table entities)
-              (when where " WHERE ") where)]
-        params))
+(defn- order-direction [col entities]
+  (if (map? col)
+    (str (jdbc/as-identifier (first (keys col)) entities)
+         " "
+         (let [dir (first (vals col))]
+           (get {:asc "ASC" :desc "DESC"} dir dir)))
+    (str (jdbc/as-identifier col entities) " ASC")))
 
 (defn- insert-multi-row [table columns values entities]
   (let [nc (count columns)
@@ -76,6 +62,37 @@
                 " )")]
           (vals row))))
 
+;; quoting strategy helpers
+
+(defmacro entities [entities sql]
+  (postwalk (fn [form]
+              (if (and (seq? form)
+                       (symbol? (first form))
+                       (entity-symbols (name (first form))))
+                (concat form [:entities entities])
+                form)) sql))
+
+(defmacro identifiers [identifiers sql]
+  (postwalk (fn [form]
+              (if (and (seq? form)
+                       (symbol? (first form))
+                       (identifier-symbols (name (first form))))
+                (concat form [:identifiers identifiers])
+                form)) sql))
+
+;; some common quoting strategies
+
+(def as-is identity)
+(def lower-case str-lower)
+(defn quoted [q] (partial jdbc/as-quoted-str q))
+
+;; SQL generation functions
+
+(defn delete [table [where & params] & {:keys [entities] :or {entities as-is}}]
+  (into [(str "DELETE FROM " (table-str table entities)
+              (when where " WHERE ") where)]
+        params))
+
 (defn insert [table & clauses]
   (let [rows (take-while map? clauses)
         n-rows (count rows)
@@ -100,14 +117,6 @@
        (str-join
         " AND "
         (map (fn [[k v]] (str (jdbc/as-identifier k entities) " = " (jdbc/as-identifier v entities))) on-map))))
-
-(defn- order-direction [col entities]
-  (if (map? col)
-    (str (jdbc/as-identifier (first (keys col)) entities)
-         " "
-         (let [dir (first (vals col))]
-           (get {:asc "ASC" :desc "DESC"} dir dir)))
-    (str (jdbc/as-identifier col entities) " ASC")))
 
 (defn order-by [cols & {:keys [entities] :or {entities as-is}}]
   (str "ORDER BY "
@@ -169,6 +178,85 @@
                 ks vs))
           (remove nil? vs))))
 
+;; java.jdbc pieces rewritten to not use dynamic bindings
+
+(defn db-find-connection
+  "Returns the current database connection (or nil if there is none)"
+  ^java.sql.Connection [db]
+  (:connection db))
+
+(defn db-connection
+  "Returns the current database connection (or throws if there is none)"
+  ^java.sql.Connection [db]
+  (or (db-find-connection db)
+      (throw (Exception. "no current database connection"))))
+
+(defn- db-rollback
+  "Accessor for the rollback flag on the current connection"
+  ([db]
+    (deref (:rollback db)))
+  ([db val]
+    (swap! (:rollback db) (fn [_] val))))
+
+(defn db-transaction*
+  "Evaluates func as a transaction on the open database connection. Any
+  nested transactions are absorbed into the outermost transaction. By
+  default, all database updates are committed together as a group after
+  evaluating the outermost body, or rolled back on any uncaught
+  exception. If rollback is set within scope of the outermost transaction,
+  the entire transaction will be rolled back rather than committed when
+  complete."
+  [db func]
+  (let [nested-db (update-in db [:level] inc)]
+    ;; This ugliness makes it easier to catch SQLException objects
+    ;; rather than something wrapped in a RuntimeException which
+    ;; can really obscure your code when working with JDBC from
+    ;; Clojure... :(
+    (letfn [(throw-non-rte [^Throwable ex]
+              (cond (instance? java.sql.SQLException ex) (throw ex)
+                    (and (instance? RuntimeException ex) (.getCause ex)) (throw-non-rte (.getCause ex))
+                    :else (throw ex)))]
+      (if (= (:level nested-db) 1)
+        (let [^java.sql.Connection con (db-connection nested-db)
+              auto-commit (.getAutoCommit con)]
+          (io!
+           (.setAutoCommit con false)
+           (try
+             (let [result (func nested-db)]
+               (if (db-rollback nested-db)
+                 (.rollback con)
+                 (.commit con))
+               result)
+             (catch Exception e
+               (.rollback con)
+               (throw-non-rte e))
+             (finally
+              (db-rollback nested-db false)
+              (.setAutoCommit con auto-commit)))))
+        (try
+          (func nested-db)
+          (catch Exception e
+            (throw-non-rte e)))))))
+
+(defn db-do-prepared
+  "Executes an (optionally parameterized) SQL prepared statement on the
+  open database connection. Each param-group is a seq of values for all of
+  the parameters.
+  Return a seq of update counts (one count for each param-group)."
+  [db transaction? sql & param-groups]
+  (with-open [^PreparedStatement stmt (jdbc/prepare-statement (db-connection db) sql)]
+    (if (empty? param-groups)
+      (if transaction?
+        (db-transaction* db (fn [db] (vector (.executeUpdate stmt))))
+        (vector (.executeUpdate stmt))) ;; it's not this simple!
+      (do
+        (doseq [param-group param-groups]
+          (#'jdbc/set-parameters stmt param-group)
+          (.addBatch stmt))
+        (db-transaction* db (fn [db] (#'jdbc/execute-batch stmt)))))))
+
+;; top-level API for actual SQL operations
+
 (defn query [db sql-params & {:keys [result-set row identifiers]
                               :or {result-set doall row identity identifiers lower-case}}]
   (jdbc/with-connection db
@@ -176,9 +264,13 @@
       (vec sql-params)
       (result-set (map row rs)))))
 
-(defn execute! [db sql-params]
-  (jdbc/with-connection db
-    (jdbc/do-prepared (first sql-params) (rest sql-params))))
+(defn execute! [db sql-params & {:keys [transaction?]
+                                 :or {transaction? true}}]
+  (with-open [^java.sql.Connection con (#'jdbc/get-connection db)]
+    (db-do-prepared (assoc db :connection con :level 0 :rollback (atom false))
+                    transaction?
+                    (first sql-params)
+                    (rest sql-params))))
 
 (defn delete! [db table where-map & {:keys [entities]
                                      :or {entities as-is}}]
