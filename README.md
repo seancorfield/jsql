@@ -4,7 +4,7 @@ Experimental DSL for SQL generation for next version of clojure.java.jdbc.
 
 ## Usage
 
-Generate SQL and parameters that can be use in **with-query-results** style expression:
+Generate SQL and parameters that can be used in **query** and **execute** expressions:
 ```clojure
 (select * :person)
 ;;=> ("SELECT * FROM person")
@@ -68,11 +68,14 @@ The remaining parts of the DSL are the high level parts that will execute SQL an
 ;;=> returns all user records that match on email
 
 (execute! db sql-params)
-;;=> runs a non-SELECT SQL statement and returns the update counts, if appropiate
+;;=> runs a non-SELECT SQL statement and returns the update counts, if appropriate
 
-;; I'm still thinking about how inserts should work...
 (insert! db :table value-maps)
+;;=> (insert :table value-maps)
+;;=> (["INSERT INTO table (..) VALUES (..)" ..] ["INSERT INTO TABLE (..) VALUES (..)" ..] ..)
 (insert! db :table col-seq value-seqs)
+;;=> (insert :table col-seq value-seqs)
+;;=> ["INSERT INTO table (..) VALUES (..), (..)" ..]
 
 (update! db :table update-map where-clause)
 ;;=> (execute! db (update :table update-map where-clause))
