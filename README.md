@@ -62,7 +62,7 @@ A *where-clause* is a sequence whose first element is a string containing SQL co
 
 **delete** expects a *table-spec* and a *where-clause* (which is not optional). It returns a sequence whose first element is a string containing a SQL DELETE statement and whose remaining elements are the values to be substituted for parameters (**?**) in that string.
 
-**insert** has yet to be designed.
+**insert** expects a *table-spec* and either *column-names* followed by *values* or *value-maps* representing rows.
 
 **join** expects a *table-spec* and a *join-map* which is used to generate the ON clause. It returns a string containing a SQL JOIN/ON clause.
 
@@ -79,33 +79,6 @@ An *update-map* is a map whose keys represent columns to be set to the correspon
 All functions that generate SQL may have an optional **:entities** keyword argument (after the specified arguments) which specifies an identifier naming convention, e.g., **(quoted \\`)** which would cause SQL entities to be quoted with **\`** (**:id** would become **\`id\`**). Other built-in naming conventions as **as-is** and **lower-case**.
 
 The **entities** macro can be used to apply an identifier naming convention to a DSL expression. It expects a function representing the naming convention and a DSL expression. It post-walks the DSL expression and inserts the **:entities** keyword argument and naming convention at the end of each expression.
-
-The remaining parts of the DSL are the high level parts that will execute SQL and process results. Current thinking is along these lines:
-```clojure
-(query db sql-params :result-set rs-fn :row row-fn)
-;;=> runs a SELECT SQL statement
-;;   applies row-fn to each row returned (default: identity)
-;;   applies rs-fn to the whole result set (default: doall)
-(query db
-  (select * :user (where {:email "user@domain.com"})))
-;;=> returns all user records that match on email
-
-(execute! db sql-params)
-;;=> runs a non-SELECT SQL statement and returns the update counts, if appropriate
-
-(insert! db :table value-maps)
-;;=> (insert :table value-maps)
-;;=> (["INSERT INTO table (..) VALUES (..)" ..] ["INSERT INTO TABLE (..) VALUES (..)" ..] ..)
-(insert! db :table col-seq value-seqs)
-;;=> (insert :table col-seq value-seqs)
-;;=> ["INSERT INTO table (..) VALUES (..), (..)" ..]
-
-(update! db :table update-map where-clause)
-;;=> (execute! db (update :table update-map where-clause))
-
-(delete! db :table where-clause)
-;;=> (execute! db (delete :table where-clause)
-```
 
 ## License
 
