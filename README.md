@@ -8,20 +8,20 @@ Because this DSL is being removed from org.clojure/java.jdbc, the java.jdbc.sql 
 
 ## Releases and Dependency Information
 
-Current release: 0.1.0-SNAPSHOT
+Latest stable release: 0.1.0:
 
 * [All Released Vesrions](https://clojars.org/java-jdbc/dsl)
 
 [Leiningen](https://github.com/technomancy/leiningen) dependency information:
 ```clojure
-[java-jdbc/dsl "0.1.0-SNAPSHOT"]
+[java-jdbc/dsl "0.1.0"]
 ```
 [Maven](http://maven.org/) dependency information:
 ```xml
 <dependency>
   <groupId>java-jdbc</groupId>
   <artifactId>dsl</artifactId>
-  <version>0.1.0-SNAPSHOT</version>
+  <version>0.1.0</version>
 </dependency>
 ```
 
