@@ -8,8 +8,7 @@
 ;;
 ;;  sql_test.clj
 ;;
-;;  This namespace contains tests that exercise the optional DSL
-;;  portion of java.jdbc.
+;;  This namespace contains tests that exercise java-jdbc.sql
 ;;
 ;;  seancorfield (gmail)
 ;;  Constructured from tests for jsql DSL December 2012

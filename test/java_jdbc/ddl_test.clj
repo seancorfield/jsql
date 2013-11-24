@@ -9,7 +9,7 @@
 ;;  ddl_test.clj
 ;;
 ;;  This namespace contains tests of all the functions within
-;;  java.jdbc.ddl and does not rely on any databases.
+;;  java-jdbc.ddl and does not rely on any databases.
 ;;
 ;;  scgilardi (gmail)
 ;;  Created 13 September 2008
