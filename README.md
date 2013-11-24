@@ -1,6 +1,29 @@
-# jsql
+# java-jdbc/dsl
 
-Experimental DSL for SQL generation for next version of clojure.java.jdbc.
+Basic DSL for SQL/DDL generation formerly part of [org.clojure/java.jdbc](https://github.com/clojure/java.jdbc) (0.3.0).
+
+This DSL was grown here in this repository as an experiment for inclusion in the java.jdbc contrib library but community feedback indicated that adding a DSL to java.jdbc caused confusion and was unnecessary. In particular, this DSL wasn't very sophisticated and I had no plans to make it sophisticated. Projects like [HoneySQL](https://github.com/jkk/honeysql) and [SQLingvo](https://github.com/r0man/sqlingvo) are always going to be better DSLs.
+
+Because this DSL is being removed from org.clojure/java.jdbc, the java.jdbc.sql and java.jdbc.ddl namespaces have been moved to this external project so that anyone using the DSL can continue doing so by simply switching to the java-jdbc.sql and java-jdbc.ddl namespaces from this project instead.
+
+## Releases and Dependency Information
+
+Current release: 0.1.0-SNAPSHOT
+
+* [All Released Vesrions](https://clojars.org/java-jdbc/dsl)
+
+[Leiningen](https://github.com/technomancy/leiningen) dependency information:
+```clojure
+[java-jdbc/dsl "0.1.0-SNAPSHOT"]
+```
+[Maven](http://maven.org/) dependency information:
+```xml
+<dependency>
+  <groupId>java-jdbc</groupId>
+  <artifactId>dsl</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
+</dependency>
+```
 
 ## Usage
 
@@ -10,11 +33,11 @@ Generate SQL and parameters that can be used in **query** and **execute** expres
 ;;=> ("SELECT * FROM person")
 (select [:id :name] :person
   (where {:email "user@domain.com"}))
-;;=> ("SELECT id, name FROM person WHERE email = ?" "user@domain.com")
+;;=> ("SELECT id,name FROM person WHERE email = ?" "user@domain.com")
 (select [{:p.id :userid} :p.name :a.city] {:person :p}
-  (join {:address :a} {:p.id :a.personid}
+  (join {:address :a} {:p.id :a.personid})
   (where {:p.email "user@domain.com"}))
-;;=> ("SELECT userid, p.name FROM person p JOIN address a ON p.id = a.personid
+;;=> ("SELECT p.id AS userid,p.name,a.city FROM person p JOIN address a ON p.id = a.personid
 ;;     WHERE p.email = ?" "user@domain.com")
 (select [:id :name] :person
   (order-by :name))
@@ -86,6 +109,6 @@ The remaining parts of the DSL are the high level parts that will execute SQL an
 
 ## License
 
-Copyright © 2012 Sean Corfield
+Copyright (c) 2012-2013 Sean Corfield
 
 Distributed under the Eclipse Public License, the same as Clojure.
