@@ -303,6 +303,8 @@ and update! high-level operations within clojure.java.jdbc directly." }
            " AND "
            (map (fn [k v]
                   (str (as-str entities k)
-                       (if (nil? v) " IS NULL" " = ?")))
+                       (if (sequential? v)
+                         (str " IN (" (str/join ", " (repeat (count v) "?")) ")")
+                         (if (nil? v) " IS NULL" " = ?"))))
                 ks vs))
-          (remove nil? vs))))
+          (remove nil? (flatten vs)))))
