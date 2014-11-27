@@ -32,8 +32,8 @@ Generate SQL and parameters that can be used in **query** and **execute** expres
 (select * :person)
 ;;=> ("SELECT * FROM person")
 (select [:id :name] :person
-  (where {:email "user@domain.com"}))
-;;=> ("SELECT id,name FROM person WHERE email = ?" "user@domain.com")
+  (where {:email "user@domain.com" :sex ["M", "F"]}))
+;;=> ("SELECT id,name FROM person WHERE email = ? AND sex IN (?, ?)" "user@domain.com" "M", "F")
 (select [{:p.id :userid} :p.name :a.city] {:person :p}
   (join {:address :a} {:p.id :a.personid})
   (where {:p.email "user@domain.com"}))

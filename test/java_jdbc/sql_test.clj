@@ -47,7 +47,9 @@
 
 (deftest where-dsl
   (is (= ["id = ?" 42] (where {:id 42})))
-  (is (= ["id IS NULL"] (where {:id nil}))))
+  (is (= ["id IS NULL"] (where {:id nil})))
+  (is (= ["id IN (?, ?, ?, ?, ?, ?)" 4 8 15 16 23 42] (where {:id [4 8 15 16 23 42]})))
+  (is (= ["name = ? AND code IS NULL AND id IN (?, ?, ?)" "wow" 4 8 15] (where {:code nil :id [4 8 15] :name "wow"}))))
 
 (deftest select-where-dsl
   (is (#{["SELECT * FROM a WHERE c = ? AND b = ?" 3 2]
