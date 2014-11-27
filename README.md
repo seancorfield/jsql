@@ -8,20 +8,20 @@ Because this DSL is being removed from org.clojure/java.jdbc, the java.jdbc.sql 
 
 ## Releases and Dependency Information
 
-Latest stable release: 0.1.0:
+Latest stable release: 0.1.1:
 
 * [All Released Vesrions](https://clojars.org/java-jdbc/dsl)
 
 [Leiningen](https://github.com/technomancy/leiningen) dependency information:
 ```clojure
-[java-jdbc/dsl "0.1.0"]
+[java-jdbc/dsl "0.1.1"]
 ```
 [Maven](http://maven.org/) dependency information:
 ```xml
 <dependency>
   <groupId>java-jdbc</groupId>
   <artifactId>dsl</artifactId>
-  <version>0.1.0</version>
+  <version>0.1.1</version>
 </dependency>
 ```
 
@@ -80,8 +80,13 @@ All functions that generate SQL may have an optional **:entities** keyword argum
 
 The **entities** macro can be used to apply an identifier naming convention to a DSL expression. It expects a function representing the naming convention and a DSL expression. It post-walks the DSL expression and inserts the **:entities** keyword argument and naming convention at the end of each expression.
 
+## Changees
+
+0.1.1 2014-11-27 Add support for IN (@dryewo); bump base Clojure version to 1.6.0
+0.1.0 2013-11-24 Initial version extracted from java.jdbc
+
 ## License
 
-Copyright (c) 2012-2013 Sean Corfield
+Copyright (c) 2012-2014 Sean Corfield
 
 Distributed under the Eclipse Public License, the same as Clojure.
