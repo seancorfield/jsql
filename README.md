@@ -82,7 +82,7 @@ The **entities** macro can be used to apply an identifier naming convention to a
 
 ## Changees
 
-* 0.1.1 2014-11-27 Add support for IN (@dryewo); bump base Clojure version to 1.6.0
+* 0.1.1 2014-11-27 Add support for IN ([@dryewo](https://github.com/seancorfield/jsql/pull/1)); bump base Clojure version to 1.6.0
 * 0.1.0 2013-11-24 Initial version extracted from java.jdbc
 
 ## License
