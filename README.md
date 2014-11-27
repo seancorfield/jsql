@@ -10,7 +10,7 @@ Because this DSL is being removed from org.clojure/java.jdbc, the java.jdbc.sql 
 
 Latest stable release: 0.1.1:
 
-* [All Released Vesrions](https://clojars.org/java-jdbc/dsl)
+* [All Released Versions](https://clojars.org/java-jdbc/dsl)
 
 [Leiningen](https://github.com/technomancy/leiningen) dependency information:
 ```clojure
