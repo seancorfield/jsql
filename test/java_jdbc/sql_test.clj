@@ -46,6 +46,7 @@
          (select * :a (join :b {:a.id :b.id}) (join :c {:c.id :b.id})))))
 
 (deftest where-dsl
+  (is (= ["id = ?" 1] (where ["id = ?" 1])))
   (is (= ["id = ?" 42] (where {:id 42})))
   (is (= ["id IS NULL"] (where {:id nil})))
   (is (= ["id IN (?, ?, ?, ?, ?, ?)" 4 8 15 16 23 42] (where {:id [4 8 15 16 23 42]})))

@@ -299,6 +299,8 @@ and update! high-level operations within clojure.java.jdbc directly." }
   [param-map & {:keys [entities] :or {entities as-is}}]
   (let [ks (keys param-map)
         vs (vals param-map)]
+    (if (vector? param-map)
+      param-map
     (cons (str/join
            " AND "
            (map (fn [k v]
@@ -307,4 +309,4 @@ and update! high-level operations within clojure.java.jdbc directly." }
                          (str " IN (" (str/join ", " (repeat (count v) "?")) ")")
                          (if (nil? v) " IS NULL" " = ?"))))
                 ks vs))
-          (remove nil? (flatten vs)))))
+          (remove nil? (flatten vs))))))
