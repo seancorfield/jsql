@@ -14,14 +14,14 @@ Latest stable release: 0.1.2:
 
 [Leiningen](https://github.com/technomancy/leiningen) dependency information:
 ```clojure
-[java-jdbc/dsl "0.1.1"]
+[java-jdbc/dsl "0.1.2"]
 ```
 [Maven](http://maven.org/) dependency information:
 ```xml
 <dependency>
   <groupId>java-jdbc</groupId>
   <artifactId>dsl</artifactId>
-  <version>0.1.1</version>
+  <version>0.1.2</version>
 </dependency>
 ```
 
