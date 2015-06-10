@@ -14,6 +14,7 @@
 ;;  Constructured from tests for jsql DSL December 2012
 
 (ns java-jdbc.sql-test
+  (:refer-clojure :exclude [update])
   (:use clojure.test
         java-jdbc.sql))
 

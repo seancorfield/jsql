@@ -8,20 +8,20 @@ Because this DSL is being removed from org.clojure/java.jdbc, the java.jdbc.sql 
 
 ## Releases and Dependency Information
 
-Latest stable release: 0.1.2:
+Latest stable release: 0.1.3:
 
 * [All Released Versions](https://clojars.org/java-jdbc/dsl)
 
 [Leiningen](https://github.com/technomancy/leiningen) dependency information:
 ```clojure
-[java-jdbc/dsl "0.1.2"]
+[java-jdbc/dsl "0.1.3"]
 ```
 [Maven](http://maven.org/) dependency information:
 ```xml
 <dependency>
   <groupId>java-jdbc</groupId>
   <artifactId>dsl</artifactId>
-  <version>0.1.2</version>
+  <version>0.1.3</version>
 </dependency>
 ```
 
@@ -82,12 +82,13 @@ The **entities** macro can be used to apply an identifier naming convention to a
 
 ## Changees
 
+* 0.1.3 2015-06-10 Update to support Clojure 1.7.0-RC1 (conflict with `update`).
 * 0.1.2 2015-04-13 Add support for more WHERE clauses ([@kofrasa](https://github.com/seancorfield/jsql/pull/3)).
 * 0.1.1 2014-11-27 Add support for IN ([@dryewo](https://github.com/seancorfield/jsql/pull/1)); bump base Clojure version to 1.6.0
 * 0.1.0 2013-11-24 Initial version extracted from java.jdbc
 
 ## License
 
-Copyright (c) 2012-2014 Sean Corfield
+Copyright (c) 2012-2015 Sean Corfield
 
 Distributed under the Eclipse Public License, the same as Clojure.
